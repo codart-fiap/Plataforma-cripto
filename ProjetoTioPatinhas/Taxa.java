@@ -11,7 +11,8 @@ public class Taxa {
     }
 
     public BigDecimal aplicarTaxa() {
-        BigDecimal taxa = new BigDecimal("0.06");
-        return this.valor.subtract(this.valor.multiply(taxa));
+        BigDecimal porcentagem = this.taxa.multiply(new BigDecimal(100));
+        System.out.println("Taxa de " + porcentagem + "% aplicada com sucesso!");
+        return this.valor.subtract(this.valor.multiply(this.taxa));
    }
 }

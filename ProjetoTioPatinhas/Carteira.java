@@ -5,13 +5,15 @@ import java.util.*;
 
 public class Carteira {
     Map<String, BigDecimal> ativos = new HashMap<>();
-    BigDecimal saldo;
     Transacao transacao;
+    Conta conta;
     private static final Scanner scanner = new Scanner(System.in);
 
-    public Carteira(BigDecimal saldo) {
-        this.saldo = saldo;
+    public Carteira(Conta conta) {
+        this.conta = conta;
         this.transacao = new Transacao(this);
+        this.adicionarAtivos();
+        this.removerAtivos();
     }
 
     public void adicionarAtivos() {
@@ -24,7 +26,7 @@ public class Carteira {
     }
 
     public void removerAtivos() {
-        System.out.println("o saldo é: " + saldo);
+        System.out.println("o saldo é: " + this.conta.saldo);
         String nome = this.criarInput("Me informe qual cripto moeda deseja vender (btc ou eth)");
         BigDecimal valorRetirado = this.criarInputBigDecial("Quanto deseja vender?");
 

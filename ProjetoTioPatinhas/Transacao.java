@@ -21,11 +21,11 @@ public class Transacao {
     BigDecimal quantidade = valor.divide(preço, 4, RoundingMode.HALF_UP);
 
     if (acao.equals("comprar")) {
-        this.carteira.saldo = this.carteira.saldo.subtract(valor);
-        System.out.println(quantidade + " " + nome + " foi comprado com sucesso! foram investidos R$" + valor + "o saldo foi alterado para: " + this.carteira.saldo);
+        this.carteira.conta.saldo = this.carteira.conta.saldo.subtract(valor);
+        System.out.println(quantidade + " " + nome + " foi comprado com sucesso! foram investidos R$" + valor + "o saldo foi alterado para: " + this.carteira.conta.saldo);
     } else if(acao.equals("vender")) {
-        this.carteira.saldo = this.carteira.saldo.add(valor);
-        System.out.println(quantidade + " " + nome + " foi vendido com sucesso! foram retirados R$" + valor + "o saldo foi alterado para: " + this.carteira.saldo);
+        this.carteira.conta.saldo = this.carteira.conta.saldo.add(valor);
+        System.out.println(quantidade + " " + nome + " foi vendido com sucesso! foram retirados R$" + valor + "o saldo foi alterado para: " + this.carteira.conta.saldo);
     }
     return valor;
    }
@@ -41,11 +41,11 @@ public class Transacao {
 
     public void verificarSaldoSuficiente(String acao, BigDecimal valor, String nome) {
         if (acao.equals("comprar")) {
-            while (valor.compareTo(this.carteira.saldo) > 0) {
-                System.out.println("Saldo insuficiente! Seu saldo é R$" + this.carteira.saldo + 
+            while (valor.compareTo(this.carteira.conta.saldo) > 0) {
+                System.out.println("Saldo insuficiente! Seu saldo é R$" + this.carteira.conta.saldo + 
                                    " e o valor da compra é R$" + valor);
                 BigDecimal deposito = this.criarInput("Informe quanto deseja adicionar:");
-                this.carteira.saldo = this.carteira.saldo.add(deposito);
+                this.carteira.conta.saldo = this.carteira.conta.saldo.add(deposito);
             }
         } 
     }

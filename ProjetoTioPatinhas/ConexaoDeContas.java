@@ -14,7 +14,6 @@ public class ConexaoDeContas {
     this.contaPessoal = pessoal;
     this.contaEmpresarial = empresarial;
     this.solicitarAcesso();
-    this.conectarConta();
     }
 
     public void solicitarAcesso() {
@@ -23,7 +22,7 @@ public class ConexaoDeContas {
         if (resposta.toLowerCase().equals("sim")) {
             this.conectarConta();
         } else {
-            System.out.println("Conexão interrompida");
+            System.out.println("Conexão Cancelada");
         }
 
     }

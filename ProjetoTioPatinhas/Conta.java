@@ -12,6 +12,7 @@ public class Conta {
 
     {
         this.fornecerInformacoes();
+        this.depositarSaldo();
     }
 
     public void fornecerInformacoes() {
@@ -43,10 +44,10 @@ public class Conta {
     }
 
     public void logar() {
-        // this.email = this.criarInput("Digite seu email:");
-        // this.validarEmail();
-        // this.senhaHash = this.criarInput("Digite sua senha:");
-        // this.validarSenha();
+        this.email = this.criarInput("Digite seu email:");
+        this.validarEmail();
+        this.senhaHash = this.criarInput("Digite sua senha:");
+        this.validarSenha();
     }
 
     public void validarNome() {
@@ -85,8 +86,8 @@ public class Conta {
         this.senhaHash = this.reescrever_dado(validacao, "senha", regexSenha, this.senhaHash);
     }
 
-    public void depositar() {
-        String entrada = criarInput("Digite um valor para depositar: ");
+    public void depositarSaldo() {
+        String entrada = criarInput("Conta Criada com sucesso. Digite um valor para depositar: ");
         BigDecimal valor = new BigDecimal(entrada);
         this.saldo = this.saldo.add(valor);
         System.out.println("saldo atualizado para: " + this.saldo);
@@ -95,12 +96,4 @@ public class Conta {
     public BigDecimal consultarSaldo() {
         return this.saldo;
     }
-
-    public void adicionarSaldo() {
-        this.saldo = criarInput("Conta Criada com sucesso, adicione seu saldo")
-    }
-
-
-
-
 }
