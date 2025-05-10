@@ -7,6 +7,17 @@ public class Main {
 
         try {
 
+            System.out.println("" +
+                    "+-------------------------------------+\n" +
+                    "|                                     |\n" +
+                    "| M     M   III   DDDD   AAAAA  SSSSS |\n" +
+                    "| MM   MM    I    D   D  A   A  S     |\n" +
+                    "| M M M M    I    D   D  AAAAA  SSSSS |\n" +
+                    "| M  M  M    I    D   D  A   A      S |\n" +
+                    "| M     M   III   DDDD   A   A  SSSSS |\n" +
+                    "|                                     |\n" +
+                    "+-------------------------------------+");
+
             System.out.println("Criando Conta pessoal: ");
 
             ContaPessoal contaPessoal = new ContaPessoal();
@@ -16,7 +27,7 @@ public class Main {
             ConexaoDeContas conexao = new ConexaoDeContas(contaPessoal, contaEmpresarial);
             Carteira carteira = new Carteira(contaPessoal);
 
-            throw new RuntimeException("teste");
+
 
 
         }

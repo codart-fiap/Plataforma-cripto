@@ -1,13 +1,16 @@
 package ProjetoTioPatinhas;
+import java.util.HashMap;
 import java.util.regex.*;
 import java.math.BigDecimal;
 import java.util.Scanner;
-
+import java.util.Map;
+import java.lang.String;
 public class Conta {
     String nome;
     String email;
     BigDecimal saldo = new BigDecimal("0.00");
     String senhaHash;
+    Map<String, String> contasExistentes = new HashMap<>();
     private static final Scanner scanner = new Scanner(System.in);
 
     {
@@ -16,25 +19,21 @@ public class Conta {
     }
 
     public void fornecerInformacoes() {
-        String resposta = this.criarInput("Digite 1 para criar uma conta ou 2 para logar:"); 
-        if (resposta.equals("2")) {
-            this.logar();
-        } else {
-            this.nome = this.criarInput("Digite seu nome completo:");
-            this.validarNome();
-            this.email = this.criarInput("Digite seu email:");
-            this.validarEmail();
-            this.senhaHash = this.criarInput("""
-                    Digite sua senha:
-                    sua senha deve conter, no mínimo:
-                    - uma letra maiúscula
-                    - um letra minúscula
-                    - um número
-                    - um caracter especial (@#$%^&+=)
-                    - 8 caracteres no total
-                    """);
-            this.validarSenha();
-        }
+        String resposta = this.criarInput("Digite (1) para criar uma conta pessoal:\n" + "Digite (2) para entrar em uma conta existente: ");
+
+       while (resposta != "1" || resposta != "2") {
+           if (resposta.equals("2")) {
+               this.logar();
+           } else if (resposta.equals(("1"))) {
+               this.criarConta();
+
+               this.logar();
+           }else {
+               System.out.println("Por favor escolha um opção válida!");
+               this.fornecerInformacoes();
+           }
+
+       }
 
     }
     
@@ -43,19 +42,72 @@ public class Conta {
         return scanner.nextLine();
     }
 
-    public void logar() {
+    public void criarConta(){
+        System.out.println("[ CRIAÇÃO DE CONTA ]");
+        System.out.println("----------------");
+        this.nome = this.criarInput("Digite seu nome completo:");
+        this.validarNome();
         this.email = this.criarInput("Digite seu email:");
         this.validarEmail();
-        this.senhaHash = this.criarInput("Digite sua senha:");
+        this.senhaHash = this.criarInput("""
+                       Digite sua senha:
+                       sua senha deve conter, no mínimo:
+                       - uma letra maiúscula
+                       - um letra minúscula
+                       - um número
+                       - um caracter especial (@#$%^&+=)
+                       - 8 caracteres no total
+                       """);
         this.validarSenha();
+
+        contasExistentes.put(this.email,this.senhaHash);
+
+
     }
 
-    public void validarNome() {
+    public void logar() {
+        System.out.println("\n[ ENTRAR EM UMA CONTA ]\n");
+        this.email = this.criarInput("Digite seu email:");
+        if(contasExistentes.containsKey(this.email)){
+            System.out.println("Conta existente!");
+
+            String contaLog = contasExistentes.get(this.email);
+
+            verificaSenhaExistente(contaLog);
+
+        }else {
+            System.out.println("\n[ Parece que esta conta não existe! :( ]");
+
+            System.out.println("\nTentar novamente digite (1)! ( >_<'):\n----------------------------------------\nCriar uma nova conta digite (2) ( ^_^ )\n" );
+
+            String reposta = scanner.nextLine();
+
+            if(reposta.equals("1")){
+                this.logar();
+            }else {
+                this.criarConta();
+            }
+
+
+
+
+
+        }
+
+
+
+    }
+
+    public String validarNome() {
         String LETRAS_PT = "[a-zA-ZáàâãäéêëíïóôõöúüçÁÀÂÃÄÉÊËÍÏÓÔÕÖÚÜÇ]";
         // regex que valida todo tipo de nome composto separado por hifen ou espaço. 
         String regexNomeComposto = "^(" + LETRAS_PT + "{2,})([\\s-]" + LETRAS_PT + "{2,})+$";
         boolean validacao = this.validarDado(regexNomeComposto, this.nome);
         this.nome = this.reescrever_dado(validacao,"nome",regexNomeComposto,this.nome);
+
+        String[] primeiroNome = this.nome.split(" ");
+
+        return primeiroNome[0];
     }
     
     public boolean validarDado(String regex, String dado) {
@@ -78,12 +130,14 @@ public class Conta {
         String regexEmail = "[a-z0-9._-]+@[a-z0-9]+\\.[a-z]{2,}";
         boolean validacao = this.validarDado(regexEmail,this.email);
         this.email = this.reescrever_dado(validacao, "email", regexEmail, this.email);
+        System.out.println("\n--------------------------------------\nEMAIL DEFINIDO --> " + this.email + " \n--------------------------------------\n");
     }
 
     public void validarSenha() {
         String regexSenha = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@#$%^&+=])[^\\s]{8,}$";
         boolean validacao = this.validarDado(regexSenha, this.senhaHash);
         this.senhaHash = this.reescrever_dado(validacao, "senha", regexSenha, this.senhaHash);
+        System.out.println("\n--------------------------------------\nSENHA DEFINIDA --> " + this.senhaHash + " \n--------------------------------------\n");
     }
 
     public void depositarSaldo() {
@@ -95,5 +149,21 @@ public class Conta {
 
     public BigDecimal consultarSaldo() {
         return this.saldo;
+    }
+
+    public void verificaSenhaExistente(String contaExistente){
+        this.senhaHash = this.criarInput("Digite sua senha:");
+        if(this.senhaHash.equals(contaExistente)){
+            System.out.println("\nLogin efetuado com sucesso!\n");
+
+            System.out.println("Bom te ver de volta " + this.validarNome() + " \uD83D\uDE0A");
+
+
+        }else {
+            System.out.println("Senha incorreta!");
+
+            verificaSenhaExistente(contaExistente);
+
+        }
     }
 }
