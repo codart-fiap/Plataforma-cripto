@@ -45,22 +45,22 @@ public class Carteira {
     public void adicionarAtivos() {
         String nome = this.criarInput("Me informe qual cripto moeda deseja investir (btc ou eth)");
         BigDecimal valorInvestido = this.criarInputBigDecial("Qual valor deseja investir?");
-
-        valorInvestido = transacao.negociarCripto("comprar", nome, valorInvestido);
-        if (valorInvestido != null) {
-            ativos.put(nome, valorInvestido);
-            System.out.println("ativo adicionado: " + ativos);
-        }
+        transacao.negociarCripto("comprar", nome, valorInvestido);
     }
 
     public void removerAtivos() {
         System.out.println("o saldo é: " + this.conta.saldo);
         String nome = this.criarInput("Me informe qual cripto moeda deseja vender (btc ou eth)");
         BigDecimal valorRetirado = this.criarInputBigDecial("Quanto deseja vender?");
-        valorRetirado = transacao.negociarCripto("vender", nome, valorRetirado);
-        if (valorRetirado != null) {
+        transacao.negociarCripto("vender", nome, valorRetirado);
+        Map<String, BigDecimal> valores = transacao.getValores(); 
+        if (valores != null) {
+            BigDecimal valorInvestido = valores.get("valorCompra");
+            valorRetirado = valores.get("valorVenda");
+            ativos.put(nome, valorInvestido);
+            System.out.println("ativo adicionado: "+ ativos);
             ativos.remove(nome);
-            System.out.println("ativo removido: " + ativos);
+            System.out.println("ativo removido: " + ativos + " valor retirado "+ valorRetirado);
         }
     }
 

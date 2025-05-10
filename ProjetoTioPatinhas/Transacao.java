@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Transacao {
@@ -11,6 +13,8 @@ public class Transacao {
     private Carteira carteira;
     private int idTransacao;
     private static final Scanner scanner = new Scanner(System.in);
+    private static int proximoIdOrdem = 1;
+    private Map<String, BigDecimal> valores = new HashMap<>();
 
     public int getIdTransacao() {
         return idTransacao;
@@ -20,24 +24,20 @@ public class Transacao {
         this.idTransacao = idTransacao;
     }
 
+    private int gerarNovoIdTransacao() {
+        return this.idTransacao++;
+    }
+
     public Transacao(Carteira carteira) {
         this.carteira = carteira;
     }
 
-   public BigDecimal negociarCripto(String acao, String nome, BigDecimal valor) {
-       try {
-            valor = aplicarTaxa(valor);
-            this.verificarSaldoSuficiente(acao,valor, nome);
-            CriptoAtivo cripto = this.criarCriptoAtivo(nome);
-            BigDecimal preço = cripto.getCotacao();
-            BigDecimal quantidade = valor.divide(preço, 4, RoundingMode.HALF_UP);
-            this.processarTransacao(acao, nome, quantidade, valor);
-            return valor;
-        } catch (Exception e) {
-            System.out.println("Cripto moeda inválida!");
-            return null;
-        }
-        
+   public void negociarCripto(String acao, String nome, BigDecimal valor) {
+        this.verificarSaldoSuficiente(acao,valor, nome);
+        CriptoAtivo cripto = this.criarCriptoAtivo(nome);
+        BigDecimal preço = cripto.getCotacao();
+        BigDecimal quantidade = valor.divide(preço, 4, RoundingMode.HALF_UP);
+        this.gerenciarOrdem(acao, nome, quantidade, valor);        
     }
 
     public BigDecimal aplicarTaxa(BigDecimal valor) {
@@ -75,19 +75,66 @@ public class Transacao {
         return cripto;
     }
 
-    public void processarTransacao(String acao, String nome, BigDecimal quantidade, BigDecimal valor) {
-        if (acao.equals("comprar")) {
-            BigDecimal saldo = this.carteira.getSaldo();
-            saldo = saldo.subtract(valor);
-            this.carteira.setSaldo(saldo);
-            System.out.println(quantidade + " " + nome + " foi comprado com sucesso! foram investidos R$" + valor + ". o saldo foi alterado para: R$" + this.carteira.getSaldo()  + " (" + this.obterDataHoraAtualFormatada() + ")");
-        } else if(acao.equals("vender")) {
-            BigDecimal saldo = this.carteira.getSaldo();
-            saldo = saldo.add(valor);
-            this.carteira.setSaldo(saldo);
-            System.out.println(quantidade + " " + nome + " foi vendido com sucesso! foram retirados R$" + valor + ". o saldo foi alterado para: R$" + this.carteira.getSaldo() + " (" + this.obterDataHoraAtualFormatada() + ")");
+    public void gerenciarOrdem(String acao, String nome, BigDecimal quantidade, BigDecimal valor) {
+        int idOrdem = gerarNovoIdOrdem();
+        this.setIdTransacao(this.gerarNovoIdTransacao());
+        Ordem ordem = new Ordem(
+                idOrdem,
+                this.carteira.getConta().getIdConta(),
+                this.idTransacao,
+                nome,
+                acao,
+                this.obterDataHoraAtualFormatada(),
+                quantidade,
+                valor
+            );
+        ordem.setStatus("pendente");
+        Ordem correspondente = Ordem.buscarOrdemCorrespondente(acao, nome, quantidade, valor);
+        if (correspondente != null) {
+            ordem.setStatus("executada");
+            correspondente.setStatus("executada");
+            this.processarTransacao(acao, nome, quantidade, valor);
+        } else {
+            ordem.armazenarOrdem(acao, ordem);
+            System.out.println("Nenhuma ordem correspondente. Ordem pendente.");
+            // Adiciona ao mapa de ordens
         }
+        
     }
+
+    private int gerarNovoIdOrdem() {
+        return proximoIdOrdem++;
+    }
+
+    public void processarTransacao(String acao, String nome, BigDecimal quantidade, BigDecimal valor) {
+        BigDecimal valorCompra = processarCompra(nome, quantidade,valor);
+        BigDecimal valorVenda = processarVenda(nome, quantidade,valor);
+        this.valores.put("valorCompra",valorCompra);
+        this.valores.put("valorVenda",valorVenda);
+    }
+
+    public Map<String, BigDecimal> getValores() {
+        return valores;
+    }
+
+    private BigDecimal processarCompra(String nome, BigDecimal quantidade, BigDecimal valor) {
+        valor = this.aplicarTaxa(valor);
+        BigDecimal saldo = this.carteira.getSaldo();
+        saldo = saldo.subtract(valor);
+        this.carteira.setSaldo(saldo);
+        System.out.println(quantidade + " " + nome + " foi comprado com sucesso! foram investidos R$" + valor + ". o saldo foi alterado para: R$" + this.carteira.getSaldo()  + " (" + this.obterDataHoraAtualFormatada() + ")");
+        return valor;
+    }
+
+    private BigDecimal processarVenda(String nome, BigDecimal quantidade, BigDecimal valor) {
+        valor = this.aplicarTaxa(valor);
+        BigDecimal saldo = this.carteira.getSaldo();
+        saldo = saldo.add(valor);
+        this.carteira.setSaldo(saldo);
+        System.out.println(quantidade + " " + nome + " foi vendido com sucesso! foram retirados R$" + valor + ". o saldo foi alterado para: R$" + this.carteira.getSaldo() + " (" + this.obterDataHoraAtualFormatada() + ")");
+        return valor;
+    }
+
 
     public String obterDataHoraAtualFormatada() {
         LocalDateTime agora = LocalDateTime.now();

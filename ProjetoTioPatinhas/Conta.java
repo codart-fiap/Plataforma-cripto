@@ -8,6 +8,7 @@ public class Conta {
     String email;
     BigDecimal saldo = new BigDecimal("0.00");
     String senhaHash;
+    private int idConta = this.gerarNovoIdConta();
     private static final Scanner scanner = new Scanner(System.in);
 
     {
@@ -95,5 +96,13 @@ public class Conta {
 
     public BigDecimal consultarSaldo() {
         return this.saldo;
+    }
+
+    private int gerarNovoIdConta() {
+        return idConta++;
+    }
+
+    public int getIdConta() {
+        return idConta;
     }
 }
