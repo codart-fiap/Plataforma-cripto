@@ -60,7 +60,7 @@ public class Carteira {
             ativos.put(nome, valorInvestido);
             System.out.println("ativo adicionado: "+ ativos);
             ativos.remove(nome);
-            System.out.println("ativo removido: " + ativos + " valor retirado "+ valorRetirado);
+            System.out.println("ativo removido: " + ativos + ", valor retirado: "+ valorRetirado);
         }
     }
 

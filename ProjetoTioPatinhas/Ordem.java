@@ -160,9 +160,9 @@ public class Ordem {
     
     
 
-    // // Polimorfismo dinâmico
-    // @Override
-    // public String toString() {
-    //     return "Ordem [idOrdem=" + idOrdem + ", tipo=" + tipo + ", status=" + status + "]";
-    // }
+    // Polimorfismo dinâmico
+    @Override
+    public String toString() {
+        return "Ordem [idOrdem=" + idOrdem + ", tipo=" + tipo + ", status=" + status + "]";
+    }
 }
