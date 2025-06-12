@@ -11,6 +11,7 @@ public class Conta {
     BigDecimal saldo = new BigDecimal("0.00");
     String senhaHash;
     Map<String, String> contasExistentes = new HashMap<>();
+    private int idConta = this.gerarNovoIdConta();
     private static final Scanner scanner = new Scanner(System.in);
 
     {
@@ -36,7 +37,7 @@ public class Conta {
        }
 
     }
-    
+
     public String criarInput(String mensagem) {
         System.out.print(mensagem + " ");
         return scanner.nextLine();
@@ -165,5 +166,13 @@ public class Conta {
             verificaSenhaExistente(contaExistente);
 
         }
+    }
+
+    private int gerarNovoIdConta() {
+        return idConta++;
+    }
+
+    public int getIdConta() {
+        return idConta;
     }
 }

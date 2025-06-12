@@ -26,10 +26,6 @@ public class Main {
             ContaEmpresarial contaEmpresarial = new ContaEmpresarial();
             ConexaoDeContas conexao = new ConexaoDeContas(contaPessoal, contaEmpresarial);
             Carteira carteira = new Carteira(contaPessoal);
-
-
-
-
         }
 
         catch (NumberFormatException e) {
