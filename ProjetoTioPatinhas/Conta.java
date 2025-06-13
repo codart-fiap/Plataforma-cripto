@@ -6,6 +6,7 @@ import java.util.Scanner;
 import java.util.Map;
 import java.lang.String;
 public class Conta {
+    Carteira carteira;
     String nome;
     String email;
     BigDecimal saldo = new BigDecimal("0.00");
@@ -20,23 +21,27 @@ public class Conta {
     }
 
     public void fornecerInformacoes() {
-        String resposta = this.criarInput("Digite (1) para criar uma conta pessoal:\n" + "Digite (2) para entrar em uma conta existente: ");
+        String resposta = this.criarInput("Digite (1) para criar uma conta pessoal:\n" + "Digite (2) para entrar em uma conta existente: " );
+        switch (resposta) {
+            case "1":
+                this.criarConta();
+                this.logar();
+                break;
 
-       while (resposta != "1" || resposta != "2") {
-           if (resposta.equals("2")) {
-               this.logar();
-           } else if (resposta.equals(("1"))) {
-               this.criarConta();
+            case "2":
+                this.logar();
+                break;
 
-               this.logar();
-           }else {
-               System.out.println("Por favor escolha um opção válida!");
-               this.fornecerInformacoes();
-           }
 
-       }
+            default:
+                System.out.println("Por favor escolha um opção válida!");
+
+        }
+
 
     }
+
+
 
     public String criarInput(String mensagem) {
         System.out.print(mensagem + " ");
@@ -45,6 +50,8 @@ public class Conta {
 
     public void criarConta(){
         System.out.println("[ CRIAÇÃO DE CONTA ]");
+        System.out.println("Digite 0 para voltar para o início: ");
+
         System.out.println("----------------");
         this.nome = this.criarInput("Digite seu nome completo:");
         this.validarNome();
@@ -59,6 +66,7 @@ public class Conta {
                        - um caracter especial (@#$%^&+=)
                        - 8 caracteres no total
                        """);
+
         this.validarSenha();
 
         contasExistentes.put(this.email,this.senhaHash);
@@ -98,6 +106,22 @@ public class Conta {
 
 
     }
+
+    public void menu(){
+        System.out.println("Menu de opções");
+        String opcao = this.criarInput("Escolha uma opção: \n Ver meu saldo (1)");
+
+        switch (opcao){
+            case "1":
+                this.consultarSaldo();
+                this.menu();
+                break;
+            case "2":
+                break;
+        }
+    }
+
+
 
     public String validarNome() {
         String LETRAS_PT = "[a-zA-ZáàâãäéêëíïóôõöúüçÁÀÂÃÄÉÊËÍÏÓÔÕÖÚÜÇ]";
@@ -142,14 +166,31 @@ public class Conta {
     }
 
     public void depositarSaldo() {
-        String entrada = criarInput("Conta Criada com sucesso. Digite um valor para depositar: ");
-        BigDecimal valor = new BigDecimal(entrada);
-        this.saldo = this.saldo.add(valor);
-        System.out.println("saldo atualizado para: " + this.saldo);
+        String entrada = criarInput("Digite um valor para depositar: \n" + "Para voltar ao menu digite (0)! \n ");
+        if(entrada.equals("0")){
+            this.menu();
+        }else {
+            BigDecimal valor = new BigDecimal(entrada);
+            this.saldo = this.saldo.add(valor);
+            System.out.println("Saldo atualizado para: " + this.saldo);
+
+            this.menu();
+
+        }
     }
 
     public BigDecimal consultarSaldo() {
-        return this.saldo;
+        if(this.saldo.compareTo(BigDecimal.ZERO) == 0){
+
+            System.out.println("Ainda sem nada por aqui :( Digite um valor para começar a investir!");
+            this.depositarSaldo();
+        }else if (this.saldo.compareTo(BigDecimal.ZERO) > 0){
+               
+            System.out.println("Saldo atual: " + this.saldo);
+            this.depositarSaldo();
+        }
+            return this.saldo;
+
     }
 
     public void verificaSenhaExistente(String contaExistente){
@@ -158,6 +199,8 @@ public class Conta {
             System.out.println("\nLogin efetuado com sucesso!\n");
 
             System.out.println("Bom te ver de volta " + this.validarNome() + " \uD83D\uDE0A");
+
+            this.menu();
 
 
         }else {
