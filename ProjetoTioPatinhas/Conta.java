@@ -1,204 +1,86 @@
 package ProjetoTioPatinhas;
-import java.util.HashMap;
-import java.util.regex.*;
+import java.util.regex.*; // Importar Pattern e Matcher
 import java.math.BigDecimal;
 import java.util.Scanner;
-import java.util.Map;
-import java.lang.String;
+import java.util.Map; // Manter import caso seja usado em futuras implementações
+
 public class Conta {
-    String nome;
-    String email;
-    BigDecimal saldo = new BigDecimal("0.00");
-    String senhaHash;
-    Map<String, String> contasExistentes = new HashMap<>();
-    private int idConta = this.gerarNovoIdConta();
-    private static final Scanner scanner = new Scanner(System.in);
+    public String nome;
+    public String email;
+    public BigDecimal saldo = new BigDecimal("0.00");
+    public String senhaHash;
 
-    {
-        this.fornecerInformacoes();
+    private int idConta;
+    private static int proximoIdConta = 1;
+
+    // O Scanner é agora gerenciado por MenusAplicacao, não pela Conta.
+    // private static final Scanner scanner = new Scanner(System.in);
+
+    /**
+     * Construtor padrão para a classe Conta.
+     * Atribui um novo ID único à conta ao ser instanciada.
+     */
+    public Conta() {
+        this.idConta = gerarNovoIdConta();
     }
 
-    public void fornecerInformacoes() {
-        String resposta = this.criarInput("Digite (1) para criar uma conta pessoal:\n" + "Digite (2) para entrar em uma conta existente: " );
-        switch (resposta) {
-            case "1":
-                this.criarConta();
-                this.logar();
-                break;
-
-            case "2":
-                this.logar();
-                break;
-
-
-            default:
-                System.out.println("Por favor escolha um opção válida!");
-
-        }
-
-
+    /**
+     * Setter para o ID da conta. Usado principalmente ao carregar contas de um arquivo,
+     * onde o ID já é conhecido.
+     * @param idConta O ID a ser atribuído à conta.
+     */
+    public void setIdConta(int idConta) {
+        this.idConta = idConta;
     }
 
-
-
-    public String criarInput(String mensagem) {
-        System.out.print(mensagem + " ");
-        return scanner.nextLine();
-    }
-
-    public void criarConta(){
-        System.out.println("[ CRIAÇÃO DE CONTA ]");
-        System.out.println("Digite 0 para voltar para o início: ");
-
-        System.out.println("----------------");
-        this.nome = this.criarInput("Digite seu nome completo:");
-        this.validarNome();
-        this.email = this.criarInput("Digite seu email:");
-        this.validarEmail();
-        this.senhaHash = this.criarInput("""
-                       Digite sua senha:
-                       sua senha deve conter, no mínimo:
-                       - uma letra maiúscula
-                       - um letra minúscula
-                       - um número
-                       - um caracter especial (@#$%^&+=)
-                       - 8 caracteres no total
-                       """);
-
-        this.validarSenha();
-
-        contasExistentes.put(this.email,this.senhaHash);
-
-
-    }
-
-    public void logar() {
-        System.out.println("\n[ ENTRAR EM UMA CONTA ]\n");
-        this.email = this.criarInput("Digite seu email:");
-        if(contasExistentes.containsKey(this.email)){
-            System.out.println("Conta existente!");
-
-            String contaLog = contasExistentes.get(this.email);
-
-            verificaSenhaExistente(contaLog);
-
-        }else {
-            System.out.println("\n[ Parece que esta conta não existe! :( ]");
-
-            System.out.println("\nTentar novamente digite (1)! ( >_<'):\n----------------------------------------\nCriar uma nova conta digite (2) ( ^_^ )\n" );
-
-            String reposta = scanner.nextLine();
-
-            if(reposta.equals("1")){
-                this.logar();
-            }else {
-                this.criarConta();
-            }
-
-
-
-
-
-        }
-
-
-
-    }
-
-
-
-
-    public String validarNome() {
-        String LETRAS_PT = "[a-zA-ZáàâãäéêëíïóôõöúüçÁÀÂÃÄÉÊËÍÏÓÔÕÖÚÜÇ]";
-        // regex que valida todo tipo de nome composto separado por hifen ou espaço. 
-        String regexNomeComposto = "^(" + LETRAS_PT + "{2,})([\\s-]" + LETRAS_PT + "{2,})+$";
-        boolean validacao = this.validarDado(regexNomeComposto, this.nome);
-        this.nome = this.reescrever_dado(validacao,"nome",regexNomeComposto,this.nome);
-
-        String[] primeiroNome = this.nome.split(" ");
-
-        return primeiroNome[0];
-    }
-    
-    public boolean validarDado(String regex, String dado) {
-        Pattern padrao = Pattern.compile(regex);
-        Matcher verificador = padrao.matcher(dado);
-        boolean validacao = verificador.matches();
-        System.out.println(validacao);
-        return validacao;
-    }
-
-    public String reescrever_dado(boolean validacao, String tipoDado, String regex, String dado) {
-        while (!validacao) {
-            dado = criarInput("Favor digitar um " + tipoDado + " válido:");
-            validacao = this.validarDado(regex, dado);
-        }
-        return dado;
-    }
-
-    public void validarEmail() {
-        String regexEmail = "[a-z0-9._-]+@[a-z0-9]+\\.[a-z]{2,}";
-        boolean validacao = this.validarDado(regexEmail,this.email);
-        this.email = this.reescrever_dado(validacao, "email", regexEmail, this.email);
-        System.out.println("\n--------------------------------------\nEMAIL DEFINIDO --> " + this.email + " \n--------------------------------------\n");
-    }
-
-    public void validarSenha() {
-        String regexSenha = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@#$%^&+=])[^\\s]{8,}$";
-        boolean validacao = this.validarDado(regexSenha, this.senhaHash);
-        this.senhaHash = this.reescrever_dado(validacao, "senha", regexSenha, this.senhaHash);
-        System.out.println("\n--------------------------------------\nSENHA DEFINIDA --> " + this.senhaHash + " \n--------------------------------------\n");
-    }
-
-    public void depositarSaldo() {
-        String entrada = criarInput("Digite um valor para depositar: \n" + "Para voltar ao menu digite (0)! \n ");
-        if(entrada.equals("0")){
-        }else {
-            BigDecimal valor = new BigDecimal(entrada);
-            this.saldo = this.saldo.add(valor);
-            System.out.println("Saldo atualizado para: " + this.saldo);
-
-
-        }
-    }
-
-    public BigDecimal consultarSaldo() {
-        if(this.saldo.compareTo(BigDecimal.ZERO) == 0){
-
-            System.out.println("Ainda sem nada por aqui :( Digite um valor para começar a investir!");
-            this.depositarSaldo();
-        }else if (this.saldo.compareTo(BigDecimal.ZERO) > 0){
-               
-            System.out.println("Depositar \n " + "Saldo atual: " + this.saldo);
-            this.depositarSaldo();
-        }
-            return this.saldo;
-
-    }
-
-    public void verificaSenhaExistente(String contaExistente){
-        this.senhaHash = this.criarInput("Digite sua senha:");
-        if(this.senhaHash.equals(contaExistente)){
-            System.out.println("\nLogin efetuado com sucesso!\n");
-
-            System.out.println("Bom te ver de volta " + this.validarNome() + " \uD83D\uDE0A");
-
-
-
-
-        }else {
-            System.out.println("Senha incorreta!");
-
-            verificaSenhaExistente(contaExistente);
-
-        }
-    }
-
-    private int gerarNovoIdConta() {
-        return idConta++;
-    }
-
+    /**
+     * Getter para o ID da conta.
+     * @return O ID único da conta.
+     */
     public int getIdConta() {
         return idConta;
+    }
+
+    /**
+     * Método estático para gerar um novo ID único para uma conta.
+     * Garante que cada nova conta receba um ID sequencial e exclusivo.
+     * @return O próximo ID disponível.
+     */
+    private static int gerarNovoIdConta() {
+        return proximoIdConta++;
+    }
+
+    /**
+     * Método estático para definir o próximo ID disponível.
+     * Usado por `Main.java` após carregar contas de arquivos para garantir
+     * que novos IDs não entrem em conflito com IDs existentes.
+     * @param newId O novo valor para o próximo ID.
+     */
+    public static void setProximoIdConta(int newId) {
+        if (newId >= proximoIdConta) { // Usar >= para o caso de o arquivo ter o mesmo ID
+            proximoIdConta = newId + 1; // Próximo ID deve ser maior que o maior carregado
+        }
+    }
+
+    /**
+     * Permite que o usuário deposite saldo na conta.
+     * @param valor O valor BigDecimal a ser depositado.
+     */
+    public void depositarSaldo(BigDecimal valor) {
+        if (valor.compareTo(BigDecimal.ZERO) > 0) { // Garante que o depósito seja positivo
+            this.saldo = this.saldo.add(valor);
+            System.out.println("Saldo atualizado para: R$" + this.saldo.toPlainString());
+        } else {
+            System.out.println("O valor do depósito deve ser positivo.");
+        }
+    }
+
+    /**
+     * Consulta o saldo atual da conta.
+     * @return O saldo atual da conta.
+     */
+    public BigDecimal consultarSaldo() {
+        System.out.println("Seu saldo atual é: R$" + this.saldo.toPlainString());
+        return this.saldo;
     }
 }
