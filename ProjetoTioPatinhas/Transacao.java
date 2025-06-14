@@ -32,33 +32,52 @@ public class Transacao {
         this.carteira = carteira;
     }
 
-   public void negociarCripto(String acao, String nome, BigDecimal valor) {
-        this.verificarSaldoSuficiente(acao,valor, nome);
-        CriptoAtivo cripto = this.criarCriptoAtivo(nome);
+    public void negociarCripto(String acao, String nome, BigDecimal valor) {
+        // A validação do 'nome' agora é feita em Carteira.java antes de chamar este método.
+        this.verificarSaldoSuficiente(acao, valor, nome);
+        CriptoAtivo cripto = this.criarCriptoAtivo(nome); // 'cripto' não será nulo se 'nome' for válido
+
+        // Verifica se 'cripto' é nulo, embora a validação em Carteira.java já deva prevenir isso.
+        // É uma camada extra de segurança.
+        if (cripto == null) {
+            System.err.println("Erro: Criptoativo não encontrado para o nome '" + nome + "'.");
+            return;
+        }
+
         BigDecimal preço = cripto.getCotacao();
+        // Evita divisão por zero se o preço for zero, embora seja improvável para criptos reais.
+        if (preço.compareTo(BigDecimal.ZERO) == 0) {
+            System.err.println("Erro: Preço da criptomoeda é zero. Não é possível negociar.");
+            return;
+        }
         BigDecimal quantidade = valor.divide(preço, 4, RoundingMode.HALF_UP);
         this.gerenciarOrdem(acao, nome, quantidade, valor);
     }
 
     public BigDecimal aplicarTaxa(BigDecimal valor) {
-        return new Taxa(new BigDecimal("0.06"), valor).aplicarTaxa();
+        // Considerando uma taxa fixa, ajustei para garantir que não haja erros de arredondamento.
+        // A taxa de 6% significa que o valor final será 94% do original.
+        BigDecimal taxaAplicada = valor.multiply(new BigDecimal("0.06"));
+        BigDecimal valorComTaxa = valor.subtract(taxaAplicada);
+        System.out.println("Taxa de 6% (R$" + taxaAplicada.toPlainString() + ") aplicada. Valor líquido: R$" + valorComTaxa.toPlainString());
+        return valorComTaxa;
     }
 
-   public BigDecimal criarInput(String mensagem) {
-    System.out.print(mensagem + " ");
-    return scanner.nextBigDecimal();
+    public BigDecimal criarInput(String mensagem) {
+        System.out.print(mensagem + " ");
+        return scanner.nextBigDecimal();
     }
 
     public void verificarSaldoSuficiente(String acao, BigDecimal valor, String nome) {
         if (acao.equals("comprar")) {
             while (valor.compareTo(this.carteira.getSaldo()) > 0) {
-                System.out.println("Saldo insuficiente! Seu saldo é R$" + this.carteira.getSaldo() + 
-                                   " e o valor da compra é R$" + valor);
-                BigDecimal deposito = this.criarInput("Adicione saldo para começar a investir !:");
-                BigDecimal saldo = this.carteira.getSaldo();
-                saldo = saldo.add(deposito);
-                this.carteira.setSaldo(saldo);
-
+                System.out.println("Saldo insuficiente! Seu saldo é R$" + this.carteira.getSaldo().toPlainString() +
+                        " e o valor da compra é R$" + valor.toPlainString());
+                BigDecimal deposito = this.criarInput("Adicione saldo para começar a investir (apenas números):");
+                BigDecimal saldoAtual = this.carteira.getSaldo();
+                saldoAtual = saldoAtual.add(deposito);
+                this.carteira.setSaldo(saldoAtual);
+                System.out.println("Saldo atualizado para: R$" + saldoAtual.toPlainString());
             }
         }
     }
@@ -71,8 +90,9 @@ public class Transacao {
 
         } else if (nome.equalsIgnoreCase("btc")) {
             BigDecimal cotacao = new BigDecimal(200_000);
-            cripto = new CriptoAtivo(1, "Bitcoin", "BTC", cotacao);  
-        } 
+            cripto = new CriptoAtivo(1, "Bitcoin", "BTC", cotacao);
+        }
+        // Não precisamos de um else aqui, pois a validação já acontece em Carteira.java
         return cripto;
     }
 
@@ -88,19 +108,24 @@ public class Transacao {
                 this.obterDataHoraAtualFormatada(),
                 quantidade,
                 valor
-            );
-        ordem.setStatus("pendente");
+        );
+        ordem.setStatus("pendente"); // Inicialmente define a ordem como pendente
+
         Ordem correspondente = Ordem.buscarOrdemCorrespondente(acao, nome, quantidade, valor);
         if (correspondente != null) {
             ordem.setStatus("executada");
             correspondente.setStatus("executada");
-            this.processarTransacao(acao, nome, quantidade, valor);
+            System.out.println("Ordem " + idOrdem + " (" + acao + " " + nome + ") executada com ordem correspondente " + correspondente.getIdOrdem() + ".");
         } else {
+            // Mesmo que não haja um correspondente, a ordem é armazenada como pendente.
+            // Para o usuário que está comprando/vendendo, a transação afetará sua carteira imediatamente.
             ordem.armazenarOrdem(acao, ordem);
-            System.out.println("Nenhuma ordem correspondente. Ordem pendente.");
-            // Adiciona ao mapa de ordens
+            System.out.println("Nenhuma ordem correspondente encontrada. Ordem " + idOrdem + " (" + acao + " " + nome + ") adicionada como pendente.");
         }
-        
+
+        // Processa a transação para o usuário iniciador, independentemente de ter encontrado um correspondente.
+        // Isso garante que o saldo e a carteira do usuário sejam atualizados.
+        this.processarTransacao(acao, nome, quantidade, valor);
     }
 
     private int gerarNovoIdOrdem() {
@@ -108,10 +133,16 @@ public class Transacao {
     }
 
     public void processarTransacao(String acao, String nome, BigDecimal quantidade, BigDecimal valor) {
-        BigDecimal valorCompra = processarCompra(nome, quantidade,valor);
-        BigDecimal valorVenda = processarVenda(nome, quantidade,valor);
-        this.valores.put("valorCompra",valorCompra);
-        this.valores.put("valorVenda",valorVenda);
+        BigDecimal valorFinal;
+        if (acao.equals("comprar")) {
+            valorFinal = processarCompra(nome, quantidade, valor);
+            this.valores.put("valorCompra", valorFinal); // Valor monetário gasto
+            this.valores.put("quantidadeComprada", quantidade); // Quantidade de cripto comprada
+        } else if (acao.equals("vender")) {
+            valorFinal = processarVenda(nome, quantidade, valor);
+            this.valores.put("valorVenda", valorFinal); // Valor monetário recebido
+            this.valores.put("quantidadeVendida", quantidade); // Quantidade de cripto vendida
+        }
     }
 
     public Map<String, BigDecimal> getValores() {
@@ -119,20 +150,20 @@ public class Transacao {
     }
 
     private BigDecimal processarCompra(String nome, BigDecimal quantidade, BigDecimal valor) {
-        valor = this.aplicarTaxa(valor);
+        valor = this.aplicarTaxa(valor); // Aplica a taxa antes de subtrair do saldo
         BigDecimal saldo = this.carteira.getSaldo();
         saldo = saldo.subtract(valor);
         this.carteira.setSaldo(saldo);
-        System.out.println(quantidade + " " + nome + " foi comprado com sucesso! foram investidos R$" + valor + ". o saldo foi alterado para: R$" + this.carteira.getSaldo()  + " (" + this.obterDataHoraAtualFormatada() + ")");
+        System.out.println(quantidade.toPlainString() + " " + nome.toUpperCase() + " comprado com sucesso! Foram investidos R$" + valor.toPlainString() + ". Saldo atual: R$" + this.carteira.getSaldo().toPlainString()  + " (" + this.obterDataHoraAtualFormatada() + ")");
         return valor;
     }
 
     private BigDecimal processarVenda(String nome, BigDecimal quantidade, BigDecimal valor) {
-        valor = this.aplicarTaxa(valor);
+        valor = this.aplicarTaxa(valor); // Aplica a taxa antes de adicionar ao saldo
         BigDecimal saldo = this.carteira.getSaldo();
         saldo = saldo.add(valor);
         this.carteira.setSaldo(saldo);
-        System.out.println(quantidade + " " + nome + " foi vendido com sucesso! foram retirados R$" + valor + ". o saldo foi alterado para: R$" + this.carteira.getSaldo() + " (" + this.obterDataHoraAtualFormatada() + ")");
+        System.out.println(quantidade.toPlainString() + " " + nome.toUpperCase() + " vendido com sucesso! Foram adicionados R$" + valor.toPlainString() + ". Saldo atual: R$" + this.carteira.getSaldo().toPlainString() + " (" + this.obterDataHoraAtualFormatada() + ")");
         return valor;
     }
 
@@ -142,9 +173,4 @@ public class Transacao {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         return agora.format(formatter);
     }
-    
 }
-
-
-
-

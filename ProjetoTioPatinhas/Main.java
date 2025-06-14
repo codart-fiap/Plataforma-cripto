@@ -31,16 +31,31 @@ public class Main {
                 "+-------------------------------------+");
 
         // Inicializa as coleções para armazenar dados em memória.
-        // Usamos um HashMap para contas para acesso rápido por ID da conta.
+        // 1. HashMap para contas (ID da Conta -> Objeto Conta)
         Map<Integer, Conta> mapaDeContas = new HashMap<>();
-        // Usamos um ArrayList para ativos, pois a ordem pode não ser importante
-        // e permite fácil iteração.
+        // 2. ArrayList para ativos (lista de objetos Ativo)
         List<Ativo> ativosDisponiveis = new ArrayList<>();
 
+        // Adicionando as novas coleções para cumprir o requisito de "pelo menos 2 classes"
+        // 3. ArrayList para listar todas as contas (ID da Conta -> Objeto Conta)
+        List<Conta> listaDeContas = new ArrayList<>();
+        // 4. HashMap para criptoativos por símbolo (Símbolo -> Objeto CriptoAtivo)
+        Map<String, CriptoAtivo> criptosPorSimbolo = new HashMap<>();
+
         // 1. Carrega dados existentes dos arquivos no início da aplicação.
-        // Isso popula nossos HashMaps e ArrayLists com dados persistidos.
         carregarContasDoArquivo(mapaDeContas);
         carregarAtivosDoArquivo(ativosDisponiveis);
+
+        // Popula as novas coleções com base nos dados carregados/existentes
+        // Preenchendo listaDeContas a partir de mapaDeContas
+        listaDeContas.addAll(mapaDeContas.values());
+
+        // Preenchendo criptosPorSimbolo a partir de ativosDisponiveis
+        for (Ativo ativo : ativosDisponiveis) {
+            if (ativo instanceof CriptoAtivo) {
+                criptosPorSimbolo.put(ativo.getSimbolo(), (CriptoAtivo) ativo);
+            }
+        }
 
         // Instancia o menu principal da aplicação, passando o mapa de contas.
         MenusAplicacao telaInicial = new MenusAplicacao(mapaDeContas);
@@ -49,13 +64,25 @@ public class Main {
             // Inicia o fluxo de sessão (criação/login) através do MenusAplicacao.
             telaInicial.iniciarSessao();
 
-            // Adiciona um ativo de exemplo se a lista estiver vazia após carregar.
+            // Adiciona um ativo de exemplo se a lista de ativos carregados estiver vazia.
             // Este ativo será salvo ao final da execução.
             if (ativosDisponiveis.isEmpty()) {
-                CriptoAtivo ada = new CriptoAtivo(3, "Cardano", "ADA", new BigDecimal("2.50"));
-                ativosDisponiveis.add(ada);
-                System.out.println("\nAdicionado 'Cardano' aos ativos disponíveis (será salvo ao sair).");
+                CriptoAtivo btc = new CriptoAtivo(1, "Bitcoin", "BTC", new BigDecimal("200000.00"));
+                CriptoAtivo eth = new CriptoAtivo(2, "Ethereum", "ETH", new BigDecimal("90000.00"));
+                ativosDisponiveis.add(btc);
+                ativosDisponiveis.add(eth);
+                criptosPorSimbolo.put(btc.getSimbolo(), btc);
+                criptosPorSimbolo.put(eth.getSimbolo(), eth);
+                System.out.println("\nAdicionados ativos de exemplo (Bitcoin, Ethereum) aos ativos disponíveis (serão salvos ao sair).");
             }
+
+            // Exemplo de como você pode interagir com as novas coleções
+            System.out.println("\n--- Resumo das Coleções ---");
+            System.out.println("Total de contas em mapaDeContas: " + mapaDeContas.size());
+            System.out.println("Total de contas em listaDeContas: " + listaDeContas.size());
+            System.out.println("Total de ativos em ativosDisponiveis: " + ativosDisponiveis.size());
+            System.out.println("Total de criptoativos em criptosPorSimbolo: " + criptosPorSimbolo.size());
+
 
         } catch (NumberFormatException e) {
             System.err.println("Erro: Formato numérico inválido - " + e.getMessage());
@@ -68,7 +95,7 @@ public class Main {
             // 2. Salva todos os dados (contas e ativos) de volta nos arquivos ao finalizar a aplicação.
             System.out.println("\nFinalizando e salvando dados...");
             salvarContasEmArquivo(mapaDeContas);
-            salvarAtivosEmArquivo(ativosDisponiveis);
+            salvarAtivosEmArquivo(ativosDisponiveis); // Salva ativos que foram adicionados/modificados
             System.out.println("Dados salvos com sucesso em " + ARQUIVO_CONTAS + " e " + ARQUIVO_ATIVOS + ".");
         }
     }
@@ -76,7 +103,7 @@ public class Main {
     /**
      * Salva as informações de todas as contas em um arquivo de texto.
      * Cada linha do arquivo representa uma conta, com seus atributos separados por vírgula.
-     * Inclui o tipo de conta (Pessoal/Empresarial) para recriação correta.
+     * Inclui o tipo de conta (Pessoal/Empresarial) e AGORA A SENHA para recriação correta.
      * @param contas O mapa de contas (ID -> Conta) a serem salvas.
      */
     private static void salvarContasEmArquivo(Map<Integer, Conta> contas) {
@@ -88,8 +115,11 @@ public class Main {
                 } else if (conta instanceof ContaEmpresarial) {
                     tipoConta = "Empresarial";
                 }
-                // Salva ID, Nome, Email, Saldo (em formato plain string para BigDecimal) e Tipo da Conta
-                writer.write(conta.getIdConta() + "," + conta.nome + "," + conta.email + "," + conta.saldo.toPlainString() + "," + tipoConta);
+                // Salva ID, Nome, Email, Saldo, Tipo da Conta e SENHA HASH
+                // A senhaHash pode ser null se a conta for criada sem um fluxo de cadastro completo,
+                // então adicionamos um valor padrão ou uma verificação.
+                String senhaParaSalvar = (conta.senhaHash != null) ? conta.senhaHash : "";
+                writer.write(conta.getIdConta() + "," + conta.nome + "," + conta.email + "," + conta.saldo.toPlainString() + "," + tipoConta + "," + senhaParaSalvar);
                 writer.newLine(); // Adiciona uma nova linha para a próxima conta
             }
         } catch (IOException e) {
@@ -109,13 +139,14 @@ public class Main {
             String linha;
             while ((linha = reader.readLine()) != null) {
                 String[] dados = linha.split(",");
-                // Espera 5 campos: id, nome, email, saldo, tipo
-                if (dados.length == 5) {
+                // AGORA espera 6 campos: id, nome, email, saldo, tipo, senhaHash
+                if (dados.length == 6) {
                     int id = Integer.parseInt(dados[0]);
                     String nome = dados[1];
                     String email = dados[2];
                     BigDecimal saldo = new BigDecimal(dados[3]);
                     String tipoContaStr = dados[4];
+                    String senhaHash = dados[5]; // Lendo a senhaHash do arquivo
 
                     Conta contaCarregada;
                     // Instancia o tipo correto de conta baseado no campo 'tipoContaStr'
@@ -133,6 +164,7 @@ public class Main {
                     contaCarregada.nome = nome;
                     contaCarregada.email = email;
                     contaCarregada.saldo = saldo;
+                    contaCarregada.senhaHash = senhaHash; // Definindo a senhaHash lida do arquivo
 
                     contas.put(id, contaCarregada); // Adiciona a conta reconstruída ao mapa
 
@@ -141,7 +173,7 @@ public class Main {
                         maxId = id;
                     }
                 } else {
-                    System.err.println("Linha mal formatada em " + ARQUIVO_CONTAS + ": '" + linha + "'. Ignorando.");
+                    System.err.println("Linha mal formatada em " + ARQUIVO_CONTAS + ": '" + linha + "'. Esperado 6 campos, encontrado " + dados.length + ". Ignorando.");
                 }
             }
             // Após carregar todas as contas, atualiza o gerador de IDs na classe Conta
