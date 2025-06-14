@@ -6,7 +6,6 @@ import java.util.Scanner;
 import java.util.Map;
 import java.lang.String;
 public class Conta {
-    Carteira carteira;
     String nome;
     String email;
     BigDecimal saldo = new BigDecimal("0.00");
@@ -17,7 +16,6 @@ public class Conta {
 
     {
         this.fornecerInformacoes();
-        this.depositarSaldo();
     }
 
     public void fornecerInformacoes() {
@@ -107,19 +105,6 @@ public class Conta {
 
     }
 
-    public void menu(){
-        System.out.println("Menu de opções");
-        String opcao = this.criarInput("Escolha uma opção: \n Ver meu saldo (1)");
-
-        switch (opcao){
-            case "1":
-                this.consultarSaldo();
-                this.menu();
-                break;
-            case "2":
-                break;
-        }
-    }
 
 
 
@@ -168,13 +153,11 @@ public class Conta {
     public void depositarSaldo() {
         String entrada = criarInput("Digite um valor para depositar: \n" + "Para voltar ao menu digite (0)! \n ");
         if(entrada.equals("0")){
-            this.menu();
         }else {
             BigDecimal valor = new BigDecimal(entrada);
             this.saldo = this.saldo.add(valor);
             System.out.println("Saldo atualizado para: " + this.saldo);
 
-            this.menu();
 
         }
     }
@@ -186,7 +169,7 @@ public class Conta {
             this.depositarSaldo();
         }else if (this.saldo.compareTo(BigDecimal.ZERO) > 0){
                
-            System.out.println("Saldo atual: " + this.saldo);
+            System.out.println("Depositar \n " + "Saldo atual: " + this.saldo);
             this.depositarSaldo();
         }
             return this.saldo;
@@ -200,7 +183,7 @@ public class Conta {
 
             System.out.println("Bom te ver de volta " + this.validarNome() + " \uD83D\uDE0A");
 
-            this.menu();
+
 
 
         }else {

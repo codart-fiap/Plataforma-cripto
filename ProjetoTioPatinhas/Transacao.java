@@ -37,7 +37,7 @@ public class Transacao {
         CriptoAtivo cripto = this.criarCriptoAtivo(nome);
         BigDecimal preço = cripto.getCotacao();
         BigDecimal quantidade = valor.divide(preço, 4, RoundingMode.HALF_UP);
-        this.gerenciarOrdem(acao, nome, quantidade, valor);        
+        this.gerenciarOrdem(acao, nome, quantidade, valor);
     }
 
     public BigDecimal aplicarTaxa(BigDecimal valor) {
@@ -54,12 +54,13 @@ public class Transacao {
             while (valor.compareTo(this.carteira.getSaldo()) > 0) {
                 System.out.println("Saldo insuficiente! Seu saldo é R$" + this.carteira.getSaldo() + 
                                    " e o valor da compra é R$" + valor);
-                BigDecimal deposito = this.criarInput("Informe quanto deseja adicionar:");
+                BigDecimal deposito = this.criarInput("Adicione saldo para começar a investir !:");
                 BigDecimal saldo = this.carteira.getSaldo();
                 saldo = saldo.add(deposito);
                 this.carteira.setSaldo(saldo);
+
             }
-        } 
+        }
     }
 
     public CriptoAtivo criarCriptoAtivo(String nome) {

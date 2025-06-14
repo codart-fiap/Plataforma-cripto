@@ -11,9 +11,7 @@ public class Carteira {
 
     public Carteira(Conta conta) {
         this.conta = conta;
-        this.transacao = new Transacao(this);
-        this.adicionarAtivos();
-        this.removerAtivos();
+
     }
 
     public Map<String, BigDecimal> getAtivos() {
@@ -43,6 +41,8 @@ public class Carteira {
 
 
     public void adicionarAtivos() {
+        this.transacao = new Transacao(this);
+
         String nome = this.criarInput("Me informe qual cripto moeda deseja investir (btc ou eth)");
         BigDecimal valorInvestido = this.criarInputBigDecial("Qual valor deseja investir?");
         transacao.negociarCripto("comprar", nome, valorInvestido);
@@ -65,6 +65,16 @@ public class Carteira {
     }
 
     public void consultarQuantidade() {
+
+        if (ativos.isEmpty()){
+            String opcao = this.criarInput("Você ainda não possui nenhum ativo, deseja começar a investir agora ? \n Digte (s) para sim ou (n) para não: ");
+            if (opcao.equals("s")){
+                this.adicionarAtivos();
+            }else{
+                return;
+            }
+
+        }
         for (Map.Entry<String, BigDecimal> entrada : ativos.entrySet()) {
             System.out.println(entrada.getKey() + " -> " + entrada.getValue());
         }

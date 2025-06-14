@@ -18,14 +18,9 @@ public class Main {
                     "|                                     |\n" +
                     "+-------------------------------------+");
 
-            System.out.println("Criando Conta pessoal: ");
+           MenusAplicacao telaInicial = new MenusAplicacao();
 
-            ContaPessoal contaPessoal = new ContaPessoal();
-
-            System.out.println("Criando conta Empresarial: ");
-            ContaEmpresarial contaEmpresarial = new ContaEmpresarial();
-            ConexaoDeContas conexao = new ConexaoDeContas(contaPessoal, contaEmpresarial);
-            Carteira carteira = new Carteira(contaPessoal);
+           telaInicial.contaPessoalMenu();
         }
 
         catch (NumberFormatException e) {
