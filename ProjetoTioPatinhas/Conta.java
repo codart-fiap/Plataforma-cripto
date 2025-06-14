@@ -2,19 +2,19 @@ package ProjetoTioPatinhas;
 import java.util.regex.*; // Importar Pattern e Matcher
 import java.math.BigDecimal;
 import java.util.Scanner;
-import java.util.Map; // Manter import caso seja usado em futuras implementações
+import java.util.Map;
+import java.util.HashMap; // Importar HashMap
 
 public class Conta {
     public String nome;
     public String email;
     public BigDecimal saldo = new BigDecimal("0.00");
     public String senhaHash;
+    // Adicionado mapa para armazenar os ativos específicos desta conta
+    public Map<String, BigDecimal> carteiraDeAtivos = new HashMap<>();
 
     private int idConta;
     private static int proximoIdConta = 1;
-
-    // O Scanner é agora gerenciado por MenusAplicacao, não pela Conta.
-    // private static final Scanner scanner = new Scanner(System.in);
 
     /**
      * Construtor padrão para a classe Conta.
@@ -57,8 +57,8 @@ public class Conta {
      * @param newId O novo valor para o próximo ID.
      */
     public static void setProximoIdConta(int newId) {
-        if (newId >= proximoIdConta) { // Usar >= para o caso de o arquivo ter o mesmo ID
-            proximoIdConta = newId + 1; // Próximo ID deve ser maior que o maior carregado
+        if (newId >= proximoIdConta) {
+            proximoIdConta = newId + 1;
         }
     }
 
@@ -67,7 +67,7 @@ public class Conta {
      * @param valor O valor BigDecimal a ser depositado.
      */
     public void depositarSaldo(BigDecimal valor) {
-        if (valor.compareTo(BigDecimal.ZERO) > 0) { // Garante que o depósito seja positivo
+        if (valor.compareTo(BigDecimal.ZERO) > 0) {
             this.saldo = this.saldo.add(valor);
             System.out.println("Saldo atualizado para: R$" + this.saldo.toPlainString());
         } else {

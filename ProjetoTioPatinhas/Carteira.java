@@ -4,22 +4,26 @@ import java.math.BigDecimal;
 import java.util.*;
 
 public class Carteira {
-    // Agora 'ativos' armazenará a QUANTIDADE de cada criptomoeda
-    private Map<String, BigDecimal> ativos = new HashMap<>();
-    private Transacao transacao;
-    private Conta conta;
+    // O mapa de ativos agora REFERENCIA diretamente o mapa na classe Conta
+    private Conta conta; // Mantém a referência à conta à qual esta carteira pertence
+    private Transacao transacao; // Referência para a classe Transacao
     private static final Scanner scanner = new Scanner(System.in);
 
     public Carteira(Conta conta) {
         this.conta = conta;
+        // A carteira de ativos agora é armazenada diretamente na conta
+        // this.ativos = conta.carteiraDeAtivos; // Não é mais necessário ter um 'ativos' próprio aqui
     }
 
+    // Getters e Setters ajustados para operar no mapa da conta
+    // Note que `getAtivos()` agora retorna o mapa da conta
     public Map<String, BigDecimal> getAtivos() {
-        return ativos;
+        return this.conta.carteiraDeAtivos;
     }
 
+    // `setAtivos` pode não ser mais necessário, pois as modificações devem ser feitas diretamente no mapa da conta
     public void setAtivos(Map<String, BigDecimal> ativos) {
-        this.ativos = ativos;
+        this.conta.carteiraDeAtivos = ativos;
     }
 
     public Transacao getTransacao() {
@@ -76,9 +80,9 @@ public class Carteira {
         Map<String, BigDecimal> valoresTransacao = transacao.getValores();
         if (valoresTransacao != null && valoresTransacao.containsKey("quantidadeComprada")) {
             BigDecimal quantidadeComprada = valoresTransacao.get("quantidadeComprada");
-            // Atualiza a quantidade do ativo na carteira
+            // Atualiza a quantidade do ativo na carteira da CONTA
             // Se o ativo já existe, soma a nova quantidade; caso contrário, adiciona.
-            ativos.merge(nomeCripto, quantidadeComprada, BigDecimal::add);
+            this.conta.carteiraDeAtivos.merge(nomeCripto, quantidadeComprada, BigDecimal::add);
             System.out.println("Sua carteira de ativos foi atualizada. Ativos atuais: " + formatarAtivos());
         } else {
             System.out.println("Não foi possível atualizar a carteira de ativos. A transação pode não ter gerado uma quantidade comprada.");
@@ -90,9 +94,11 @@ public class Carteira {
      * Inclui a exibição de opções e validação de entrada para criptomoedas.
      */
     public void removerAtivos() {
+        this.transacao = new Transacao(this); // Adicionado: Garante que 'transacao' não seja nulo
+
         System.out.println("Seu saldo atual é: R$" + this.conta.saldo.toPlainString());
 
-        if (ativos.isEmpty()) {
+        if (this.conta.carteiraDeAtivos.isEmpty()) {
             System.out.println("Você não possui nenhum ativo para vender em sua carteira.");
             return;
         }
@@ -104,7 +110,7 @@ public class Carteira {
             nomeCripto = this.criarInput("Me informe qual criptomoeda deseja vender (btc ou eth):").toLowerCase();
             if (nomeCripto.equals("btc") || nomeCripto.equals("eth")) {
                 // Verificar se o ativo realmente existe na carteira e se há quantidade suficiente
-                if (!ativos.containsKey(nomeCripto) || ativos.get(nomeCripto).compareTo(BigDecimal.ZERO) <= 0) {
+                if (!this.conta.carteiraDeAtivos.containsKey(nomeCripto) || this.conta.carteiraDeAtivos.get(nomeCripto).compareTo(BigDecimal.ZERO) <= 0) {
                     System.out.println("Você não possui " + nomeCripto.toUpperCase() + " ou a quantidade é zero/negativa em sua carteira.");
                     continue; // Pede novamente
                 }
@@ -131,12 +137,12 @@ public class Carteira {
         Map<String, BigDecimal> valoresTransacao = transacao.getValores();
         if (valoresTransacao != null && valoresTransacao.containsKey("quantidadeVendida")) {
             BigDecimal quantidadeVendida = valoresTransacao.get("quantidadeVendida");
-            // Diminui a quantidade do ativo na carteira
-            ativos.merge(nomeCripto, quantidadeVendida, (oldVal, newVal) -> oldVal.subtract(newVal));
+            // Diminui a quantidade do ativo na carteira da CONTA
+            this.conta.carteiraDeAtivos.merge(nomeCripto, quantidadeVendida, (oldVal, newVal) -> oldVal.subtract(newVal));
 
             // Remove o ativo do mapa se a quantidade se tornar zero ou negativa
-            if (ativos.get(nomeCripto) != null && ativos.get(nomeCripto).compareTo(BigDecimal.ZERO) <= 0) {
-                ativos.remove(nomeCripto);
+            if (this.conta.carteiraDeAtivos.get(nomeCripto) != null && this.conta.carteiraDeAtivos.get(nomeCripto).compareTo(BigDecimal.ZERO) <= 0) {
+                this.conta.carteiraDeAtivos.remove(nomeCripto);
                 System.out.println(nomeCripto.toUpperCase() + " foi removido da sua carteira, pois a quantidade é zero ou negativa.");
             }
             System.out.println("Sua carteira de ativos foi atualizada. Ativos atuais: " + formatarAtivos());
@@ -150,7 +156,7 @@ public class Carteira {
      * Se a carteira estiver vazia, sugere investir.
      */
     public void consultarQuantidade() {
-        if (ativos.isEmpty()){
+        if (this.conta.carteiraDeAtivos.isEmpty()){
             System.out.println("Você ainda não possui nenhum ativo em sua carteira.");
             String opcao = this.criarInput("Deseja começar a investir agora? Digite (s) para sim ou (n) para não: ");
             if (opcao.equalsIgnoreCase("s")){
@@ -183,11 +189,11 @@ public class Carteira {
      * @return Uma string representando os ativos na carteira.
      */
     private String formatarAtivos() {
-        if (ativos.isEmpty()) {
+        if (this.conta.carteiraDeAtivos.isEmpty()) {
             return "Nenhum ativo.";
         }
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, BigDecimal> entrada : ativos.entrySet()) {
+        for (Map.Entry<String, BigDecimal> entrada : this.conta.carteiraDeAtivos.entrySet()) {
             sb.append("- ").append(entrada.getKey().toUpperCase()).append(": ").append(entrada.getValue().toPlainString()).append("\n");
         }
         return sb.toString().trim(); // Remove a última quebra de linha se houver

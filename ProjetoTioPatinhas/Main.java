@@ -12,9 +12,10 @@ import java.util.List;
 import java.util.Map;
 
 public class Main {
-    // Nomes dos arquivos para persistência de dados
+    // Nome do arquivo para persistência de dados das contas (incluindo carteira)
     private static final String ARQUIVO_CONTAS = "contas.txt";
-    private static final String ARQUIVO_ATIVOS = "ativos.txt";
+    // O arquivo de ativos globais não será mais usado, pois os ativos são por conta.
+    // private static final String ARQUIVO_ATIVOS = "ativos.txt";
 
     public static void main(String[] args) {
 
@@ -30,32 +31,29 @@ public class Main {
                 "|                                     |\n" +
                 "+-------------------------------------+");
 
-        // Inicializa as coleções para armazenar dados em memória.
-        // 1. HashMap para contas (ID da Conta -> Objeto Conta)
+        // Inicializa a coleção para armazenar dados em memória.
+        // HashMap para contas (ID da Conta -> Objeto Conta)
         Map<Integer, Conta> mapaDeContas = new HashMap<>();
-        // 2. ArrayList para ativos (lista de objetos Ativo)
-        List<Ativo> ativosDisponiveis = new ArrayList<>();
 
-        // Adicionando as novas coleções para cumprir o requisito de "pelo menos 2 classes"
-        // 3. ArrayList para listar todas as contas (ID da Conta -> Objeto Conta)
+        // As coleções adicionais para cumprir o requisito de "pelo menos 2 classes"
+        // Serão populadas APÓS o carregamento das contas, a partir de `mapaDeContas`.
+        // ArrayList para listar todas as contas
         List<Conta> listaDeContas = new ArrayList<>();
-        // 4. HashMap para criptoativos por símbolo (Símbolo -> Objeto CriptoAtivo)
-        Map<String, CriptoAtivo> criptosPorSimbolo = new HashMap<>();
+        // HashMap para criptoativos por símbolo (Exemplo de ativos do mercado, não do usuário)
+        Map<String, CriptoAtivo> criptosDisponiveisNoMercado = new HashMap<>();
 
-        // 1. Carrega dados existentes dos arquivos no início da aplicação.
+        // Adicionando criptoativos de exemplo ao mercado (estes são fixos, não por usuário)
+        CriptoAtivo btc = new CriptoAtivo(1, "Bitcoin", "BTC", new BigDecimal("200000.00"));
+        CriptoAtivo eth = new CriptoAtivo(2, "Ethereum", "ETH", new BigDecimal("90000.00"));
+        criptosDisponiveisNoMercado.put(btc.getSimbolo(), btc);
+        criptosDisponiveisNoMercado.put(eth.getSimbolo(), eth);
+
+
+        // 1. Carrega dados existentes das contas (incluindo carteiras) do arquivo.
         carregarContasDoArquivo(mapaDeContas);
-        carregarAtivosDoArquivo(ativosDisponiveis);
 
-        // Popula as novas coleções com base nos dados carregados/existentes
-        // Preenchendo listaDeContas a partir de mapaDeContas
+        // Popula a listaDeContas com base nas contas carregadas/existentes
         listaDeContas.addAll(mapaDeContas.values());
-
-        // Preenchendo criptosPorSimbolo a partir de ativosDisponiveis
-        for (Ativo ativo : ativosDisponiveis) {
-            if (ativo instanceof CriptoAtivo) {
-                criptosPorSimbolo.put(ativo.getSimbolo(), (CriptoAtivo) ativo);
-            }
-        }
 
         // Instancia o menu principal da aplicação, passando o mapa de contas.
         MenusAplicacao telaInicial = new MenusAplicacao(mapaDeContas);
@@ -64,46 +62,32 @@ public class Main {
             // Inicia o fluxo de sessão (criação/login) através do MenusAplicacao.
             telaInicial.iniciarSessao();
 
-            // Adiciona um ativo de exemplo se a lista de ativos carregados estiver vazia.
-            // Este ativo será salvo ao final da execução.
-            if (ativosDisponiveis.isEmpty()) {
-                CriptoAtivo btc = new CriptoAtivo(1, "Bitcoin", "BTC", new BigDecimal("200000.00"));
-                CriptoAtivo eth = new CriptoAtivo(2, "Ethereum", "ETH", new BigDecimal("90000.00"));
-                ativosDisponiveis.add(btc);
-                ativosDisponiveis.add(eth);
-                criptosPorSimbolo.put(btc.getSimbolo(), btc);
-                criptosPorSimbolo.put(eth.getSimbolo(), eth);
-                System.out.println("\nAdicionados ativos de exemplo (Bitcoin, Ethereum) aos ativos disponíveis (serão salvos ao sair).");
-            }
-
-            // Exemplo de como você pode interagir com as novas coleções
+            // Exemplo de como você pode interagir com as coleções (após iniciar a sessão)
             System.out.println("\n--- Resumo das Coleções ---");
             System.out.println("Total de contas em mapaDeContas: " + mapaDeContas.size());
             System.out.println("Total de contas em listaDeContas: " + listaDeContas.size());
-            System.out.println("Total de ativos em ativosDisponiveis: " + ativosDisponiveis.size());
-            System.out.println("Total de criptoativos em criptosPorSimbolo: " + criptosPorSimbolo.size());
+            System.out.println("Total de criptoativos disponíveis no mercado (exemplo): " + criptosDisponiveisNoMercado.size());
 
 
         } catch (NumberFormatException e) {
             System.err.println("Erro: Formato numérico inválido - " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            System.err.println("Erro: Argumento inválido ao popular objeto - " + e.getMessage());
+            System.err.println("Erro: Argumento inválido ao popular objeto: " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Erro inesperado durante a execução: " + e.getMessage());
             e.printStackTrace(); // Imprime o rastreamento completo da pilha para depuração
         } finally {
-            // 2. Salva todos os dados (contas e ativos) de volta nos arquivos ao finalizar a aplicação.
+            // 2. Salva todos os dados das contas (incluindo carteiras) de volta no arquivo ao finalizar.
             System.out.println("\nFinalizando e salvando dados...");
             salvarContasEmArquivo(mapaDeContas);
-            salvarAtivosEmArquivo(ativosDisponiveis); // Salva ativos que foram adicionados/modificados
-            System.out.println("Dados salvos com sucesso em " + ARQUIVO_CONTAS + " e " + ARQUIVO_ATIVOS + ".");
+            System.out.println("Dados salvos com sucesso em " + ARQUIVO_CONTAS + ".");
         }
     }
 
     /**
      * Salva as informações de todas as contas em um arquivo de texto.
-     * Cada linha do arquivo representa uma conta, com seus atributos separados por vírgula.
-     * Inclui o tipo de conta (Pessoal/Empresarial) e AGORA A SENHA para recriação correta.
+     * Cada linha do arquivo representa uma conta, com seus atributos separados por vírgula,
+     * incluindo a carteira de ativos do usuário serializada.
      * @param contas O mapa de contas (ID -> Conta) a serem salvas.
      */
     private static void salvarContasEmArquivo(Map<Integer, Conta> contas) {
@@ -115,12 +99,16 @@ public class Main {
                 } else if (conta instanceof ContaEmpresarial) {
                     tipoConta = "Empresarial";
                 }
-                // Salva ID, Nome, Email, Saldo, Tipo da Conta e SENHA HASH
-                // A senhaHash pode ser null se a conta for criada sem um fluxo de cadastro completo,
-                // então adicionamos um valor padrão ou uma verificação.
+                // Converte o mapa de ativos da carteira para uma string para salvar
+                String carteiraSerializada = mapToString(conta.carteiraDeAtivos);
+
                 String senhaParaSalvar = (conta.senhaHash != null) ? conta.senhaHash : "";
-                writer.write(conta.getIdConta() + "," + conta.nome + "," + conta.email + "," + conta.saldo.toPlainString() + "," + tipoConta + "," + senhaParaSalvar);
-                writer.newLine(); // Adiciona uma nova linha para a próxima conta
+
+                // Salva ID, Nome, Email, Saldo, Tipo da Conta, Senha Hash e Carteira de Ativos
+                writer.write(conta.getIdConta() + "," + conta.nome + "," + conta.email + "," +
+                        conta.saldo.toPlainString() + "," + tipoConta + "," +
+                        senhaParaSalvar + "," + carteiraSerializada);
+                writer.newLine();
             }
         } catch (IOException e) {
             System.err.println("Erro ao salvar contas no arquivo " + ARQUIVO_CONTAS + ": " + e.getMessage());
@@ -129,54 +117,54 @@ public class Main {
 
     /**
      * Carrega as informações das contas de um arquivo de texto para o mapa de contas.
-     * Lê cada linha, separa os atributos e reconstrói os objetos Conta.
+     * Lê cada linha, separa os atributos e reconstrói os objetos Conta,
+     * incluindo a deserialização da carteira de ativos.
      * Também atualiza o contador de próximo ID de conta para evitar colisões.
      * @param contas O mapa onde as contas carregadas serão armazenadas.
      */
     private static void carregarContasDoArquivo(Map<Integer, Conta> contas) {
-        int maxId = 0; // Variável para rastrear o maior ID encontrado nos arquivos
+        int maxId = 0;
         try (BufferedReader reader = new BufferedReader(new FileReader(ARQUIVO_CONTAS))) {
             String linha;
             while ((linha = reader.readLine()) != null) {
-                String[] dados = linha.split(",");
-                // AGORA espera 6 campos: id, nome, email, saldo, tipo, senhaHash
-                if (dados.length == 6) {
+                String[] dados = linha.split(",", 7); // Limite de 7 para pegar a carteira completa
+                // Espera 7 campos: id, nome, email, saldo, tipo, senhaHash, carteiraDeAtivos
+                if (dados.length == 7) {
                     int id = Integer.parseInt(dados[0]);
                     String nome = dados[1];
                     String email = dados[2];
                     BigDecimal saldo = new BigDecimal(dados[3]);
                     String tipoContaStr = dados[4];
-                    String senhaHash = dados[5]; // Lendo a senhaHash do arquivo
+                    String senhaHash = dados[5];
+                    String carteiraSerializada = dados[6]; // Lendo a carteira serializada
 
                     Conta contaCarregada;
-                    // Instancia o tipo correto de conta baseado no campo 'tipoContaStr'
                     if ("Pessoal".equals(tipoContaStr)) {
                         contaCarregada = new ContaPessoal();
                     } else if ("Empresarial".equals(tipoContaStr)) {
                         contaCarregada = new ContaEmpresarial();
                     } else {
                         System.err.println("Tipo de conta desconhecido ('" + tipoContaStr + "') encontrado na linha: " + linha + ". Ignorando esta conta.");
-                        continue; // Pula para a próxima linha se o tipo for desconhecido
+                        continue;
                     }
 
-                    // Define os atributos da conta carregada usando os dados do arquivo
-                    contaCarregada.setIdConta(id); // Usa o setter para definir o ID lido
+                    // Define os atributos da conta carregada
+                    contaCarregada.setIdConta(id);
                     contaCarregada.nome = nome;
                     contaCarregada.email = email;
                     contaCarregada.saldo = saldo;
-                    contaCarregada.senhaHash = senhaHash; // Definindo a senhaHash lida do arquivo
+                    contaCarregada.senhaHash = senhaHash;
+                    contaCarregada.carteiraDeAtivos = stringToMap(carteiraSerializada); // Deserializando a carteira
 
-                    contas.put(id, contaCarregada); // Adiciona a conta reconstruída ao mapa
+                    contas.put(id, contaCarregada);
 
-                    // Atualiza o maior ID encontrado para garantir que novos IDs sejam únicos
                     if (id > maxId) {
                         maxId = id;
                     }
                 } else {
-                    System.err.println("Linha mal formatada em " + ARQUIVO_CONTAS + ": '" + linha + "'. Esperado 6 campos, encontrado " + dados.length + ". Ignorando.");
+                    System.err.println("Linha mal formatada em " + ARQUIVO_CONTAS + ": '" + linha + "'. Esperado 7 campos, encontrado " + dados.length + ". Ignorando.");
                 }
             }
-            // Após carregar todas as contas, atualiza o gerador de IDs na classe Conta
             Conta.setProximoIdConta(maxId + 1);
 
         } catch (IOException e) {
@@ -187,51 +175,50 @@ public class Main {
     }
 
     /**
-     * Salva as informações de todos os ativos em um arquivo de texto.
-     * Cada linha do arquivo representa um ativo com seus atributos separados por vírgula.
-     * @param ativos A lista de ativos a serem salvas.
+     * Converte um mapa de String para BigDecimal em uma única string serializada.
+     * Formato: "chave1:valor1;chave2:valor2"
+     * @param map O mapa a ser serializado.
+     * @return A string serializada.
      */
-    private static void salvarAtivosEmArquivo(List<Ativo> ativos) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ARQUIVO_ATIVOS))) {
-            for (Ativo ativo : ativos) {
-                // Salva ID, Nome, Símbolo e Cotação (em formato plain string para BigDecimal)
-                writer.write(ativo.getId() + "," + ativo.getNome() + "," + ativo.getSimbolo() + "," + ativo.getCotacao().toPlainString());
-                writer.newLine(); // Adiciona uma nova linha para o próximo ativo
-            }
-        } catch (IOException e) {
-            System.err.println("Erro ao salvar ativos no arquivo " + ARQUIVO_ATIVOS + ": " + e.getMessage());
+    private static String mapToString(Map<String, BigDecimal> map) {
+        if (map == null || map.isEmpty()) {
+            return "";
         }
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, BigDecimal> entry : map.entrySet()) {
+            sb.append(entry.getKey()).append(":").append(entry.getValue().toPlainString()).append(";");
+        }
+        // Remove o último ponto e vírgula se existir
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 1);
+        }
+        return sb.toString();
     }
 
     /**
-     * Carrega as informações dos ativos de um arquivo de texto para uma lista.
-     * Lê cada linha, separa os atributos e reconstrói os objetos Ativo (assumindo CriptoAtivo).
-     * @param ativos A lista onde os ativos carregados serão armazenados.
+     * Converte uma string serializada de volta para um mapa de String para BigDecimal.
+     * Formato esperado: "chave1:valor1;chave2:valor2"
+     * @param data A string serializada.
+     * @return O mapa deserializado.
      */
-    private static void carregarAtivosDoArquivo(List<Ativo> ativos) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(ARQUIVO_ATIVOS))) {
-            String linha;
-            while ((linha = reader.readLine()) != null) {
-                String[] dados = linha.split(",");
-                // Espera 4 campos: id, nome, simbolo, cotacao
-                if (dados.length == 4) {
-                    int id = Integer.parseInt(dados[0]);
-                    String nome = dados[1];
-                    String simbolo = dados[2];
-                    BigDecimal cotacao = new BigDecimal(dados[3]);
-
-                    // Para este exemplo, assumimos que todos os ativos salvos são CriptoAtivos.
-                    // Em um cenário mais complexo, você poderia ter um campo de 'tipo' para diferenciar.
-                    CriptoAtivo criptoAtivo = new CriptoAtivo(id, nome, simbolo, cotacao);
-                    ativos.add(criptoAtivo); // Adiciona o ativo reconstruído à lista
-                } else {
-                    System.err.println("Linha mal formatada em " + ARQUIVO_ATIVOS + ": '" + linha + "'. Ignorando.");
+    private static Map<String, BigDecimal> stringToMap(String data) {
+        Map<String, BigDecimal> map = new HashMap<>();
+        if (data == null || data.isEmpty()) {
+            return map;
+        }
+        String[] entries = data.split(";");
+        for (String entry : entries) {
+            String[] parts = entry.split(":");
+            if (parts.length == 2) {
+                try {
+                    String key = parts[0];
+                    BigDecimal value = new BigDecimal(parts[1]);
+                    map.put(key, value);
+                } catch (NumberFormatException e) {
+                    System.err.println("Erro ao converter valor da carteira para BigDecimal: " + parts[1] + ". Ignorando entrada.");
                 }
             }
-        } catch (IOException e) {
-            System.out.println("Arquivo de ativos '" + ARQUIVO_ATIVOS + "' não encontrado ou erro de leitura: " + e.getMessage() + ". Um novo será criado, se necessário.");
-        } catch (NumberFormatException e) {
-            System.err.println("Erro de formato de número ao carregar ativos de '" + ARQUIVO_ATIVOS + "': " + e.getMessage() + ". Verifique o conteúdo do arquivo.");
         }
+        return map;
     }
 }
