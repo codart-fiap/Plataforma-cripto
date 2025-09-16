@@ -10,7 +10,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         
         try (Connection conn = ConnectionFactory.getConnection()) {
-            conn.setAutoCommit(false);
+            conn.setAutoCommit(true);
             AtivoDao dao = new AtivoDao(conn);
             
             while (true) {
@@ -39,8 +39,7 @@ public class Main {
                         excluirAtivo(dao, scanner);
                         break;
                     case 0:
-                        conn.commit();
-                        System.out.println("Transação confirmada. Saindo...");
+                        System.out.println("Saindo...");
                         return;
                     default:
                         System.out.println("Opção inválida!");
